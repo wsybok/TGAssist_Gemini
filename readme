@@ -1,0 +1,7 @@
+this is a telegram bot that can read&recode messages from telegram group
+this bot react as my assistant in a telegram group
+this bot can send all the group messages to Gemini AI for processing
+this bot have 3 functions:
+1. send a group histroy messages to Gemini AI and asking about a background information of this group
+2. send a group histroy messages by end of the day to Gemini AI, and find out if there is any action item should be done by me
+3. according to the last message in the group, suggest what should be reply in the group by using Gemini AI

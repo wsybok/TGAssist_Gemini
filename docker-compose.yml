@@ -1,0 +1,22 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    restart: always
+    volumes:
+      - ./config.py:/app/config.py:ro
+      - ./data:/app/data
+      - ./certs:/app/certs:ro
+    ports:
+      - "8443:8443"
+    environment:
+      - TZ=Asia/Shanghai
+    healthcheck:
+      test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8443')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  data: 
