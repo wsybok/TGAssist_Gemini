@@ -18,7 +18,7 @@
 
 1. 克隆仓库：
 ```bash
-git clone https://github.com/yourusername/TGAssist_Gemini.git
+git clone https://github.com/wsybok/TGAssist_Gemini.git
 cd TGAssist_Gemini
 ```
 
