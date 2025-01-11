@@ -12,6 +12,8 @@ services:
       - "8443:8443"
     environment:
       - TZ=Asia/Shanghai
+      - PYTHONPATH=/app
+    user: "1000:1000"
     healthcheck:
       test: ["CMD", "python", "-c", "import requests; requests.get('http://localhost:8443')"]
       interval: 30s
@@ -19,4 +21,5 @@ services:
       retries: 3
 
 volumes:
-  data: 
+  data:
+    driver: local 
