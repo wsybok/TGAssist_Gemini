@@ -18,8 +18,8 @@
 
 1. 克隆仓库：
 ```bash
-git clone https://github.com/yourusername/tgassist.git
-cd tgassist
+git clone https://github.com/yourusername/TGAssist_Gemini.git
+cd TGAssist_Gemini
 ```
 
 2. 创建虚拟环境：
