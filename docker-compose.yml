@@ -7,8 +7,8 @@ services:
     volumes:
       - ./config.py:/app/config.py:ro
       - bot_data:/app/data
-    ports:
-      - "8443:8443"
+    expose:
+      - "8443"
     environment:
       - TZ=Asia/Shanghai
       - PYTHONPATH=/app
