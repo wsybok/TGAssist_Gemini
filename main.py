@@ -1,6 +1,11 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
-from settings import TELEGRAM_TOKEN, GEMINI_API_KEY, BOT_OWNER_ID, WEBHOOK_LISTEN, WEBHOOK_PORT, WEBHOOK_URL_PATH, WEBHOOK_URL, DEFAULT_LANGUAGE
+from settings import (
+    TELEGRAM_TOKEN, GEMINI_API_KEY, BOT_OWNER_ID,
+    USE_WEBHOOK, WEBHOOK_HOST, WEBHOOK_PORT,
+    WEBHOOK_LISTEN, WEBHOOK_URL_PATH, WEBHOOK_URL,
+    DEFAULT_LANGUAGE
+)
 from utils.gemini_handler import GeminiHandler
 from utils.db_handler import DatabaseHandler
 from i18n.messages import MESSAGES
@@ -585,9 +590,8 @@ def main():
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot.message_handler))
     application.add_handler(MessageHandler(filters.Document.ALL, bot.import_json))
 
-    # 根据环境变量决定使用 webhook 还是 polling
-    if os.getenv('USE_WEBHOOK', 'false').lower() == 'true':
-        # Webhook 模式
+    # 根据配置决定使用 webhook 还是 polling
+    if USE_WEBHOOK:
         print(f"正在以 Webhook 模式启动机器人...")
         print(f"Webhook URL: {WEBHOOK_URL}")
         print(f"监听地址: {WEBHOOK_LISTEN}:{WEBHOOK_PORT}{WEBHOOK_URL_PATH}")
@@ -602,7 +606,6 @@ def main():
             max_connections=100
         )
     else:
-        # Polling 模式（开发环境）
         print("正在以 Polling 模式启动机器人...")
         application.run_polling(
             drop_pending_updates=True,
