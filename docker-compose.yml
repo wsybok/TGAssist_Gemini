@@ -9,7 +9,7 @@ services:
       - bot_data:/app/data
       - ./certs:/app/certs:ro
     ports:
-      - "8443:8443"
+      - "127.0.0.1:8443:8443"
     environment:
       - TZ=Asia/Shanghai
       - PYTHONPATH=/app
@@ -21,7 +21,6 @@ services:
       retries: 3
     security_opt:
       - no-new-privileges:true
-    read_only: true
     tmpfs:
       - /tmp
     logging:

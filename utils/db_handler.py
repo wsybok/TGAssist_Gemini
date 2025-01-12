@@ -1,11 +1,14 @@
 import sqlite3
 import json
 from datetime import datetime
+import os
 
 class DatabaseHandler:
-    def __init__(self, db_name="telegram_bot.db"):
+    def __init__(self, db_name="data/telegram_bot.db"):
         print(f"初始化数据库：{db_name}")
         self.db_name = db_name
+        # 确保数据目录存在
+        os.makedirs(os.path.dirname(self.db_name), exist_ok=True)
         self.init_db()
 
     def init_db(self):
