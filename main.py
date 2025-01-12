@@ -13,15 +13,21 @@ class TelegramBot:
         self.gemini = GeminiHandler(GEMINI_API_KEY)
         self.db = DatabaseHandler()
         self.owner_id = BOT_OWNER_ID
-        self.user_languages = {}  # 存储用户语言偏好
         
     def get_message(self, key: str, user_id: int) -> str:
         """获取指定语言的消息"""
-        lang = self.user_languages.get(user_id, DEFAULT_LANGUAGE)
+        lang = self.db.get_user_language(user_id)
         return MESSAGES[lang][key]
         
     async def lang(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """处理语言切换命令"""
+        if not await self.check_owner(update):
+            return
+            
+        if update.message.chat.type != 'private':
+            await update.message.reply_text("请在私聊中使用此命令。")
+            return
+            
         keyboard = [
             [
                 InlineKeyboardButton("中文 🇨🇳", callback_data="lang_zh"),
@@ -36,12 +42,15 @@ class TelegramBot:
         
     async def handle_callback(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """处理回调查询"""
+        if not await self.check_owner(update):
+            return
+            
         query = update.callback_query
         await query.answer()
         
         if query.data.startswith('lang_'):
             lang = query.data.split('_')[1]
-            self.user_languages[update.effective_user.id] = lang
+            self.db.set_user_language(update.effective_user.id, lang)
             await query.edit_message_text(
                 self.get_message('lang_changed', update.effective_user.id)
             )
@@ -49,7 +58,7 @@ class TelegramBot:
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """处理 /start 命令"""
-        if update.effective_user.id != BOT_OWNER_ID:
+        if not await self.check_owner(update):
             return
         await update.message.reply_text(
             self.get_message('start', update.effective_user.id)
@@ -135,22 +144,27 @@ class TelegramBot:
 
     async def analyze_history(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理 /analyze 命令"""
+        if not await self.check_owner(update):
+            return
+            
         if update.message.chat.type != 'private':
             await update.message.reply_text("请在私聊中使用此命令。")
             return
 
         # 获取用户加入的所有群组
-        groups = self.db.get_all_groups()  # 返回 [(group_id, group_name), ...]
+        groups = self.db.get_all_groups()
         if not groups:
             await update.message.reply_text("未找到任何群组记录。")
             return
 
-        # 创建群组选择按钮
         reply_markup = self._create_group_selection_keyboard(groups, "analyze")
         await update.message.reply_text("请选择要分析的群组：", reply_markup=reply_markup)
 
     async def check_action_items(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理 /actions 命令"""
+        if not await self.check_owner(update):
+            return
+            
         if update.message.chat.type != 'private':
             await update.message.reply_text("请在私聊中使用此命令。")
             return
@@ -164,6 +178,9 @@ class TelegramBot:
 
     async def suggest_reply(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理 /suggest 命令"""
+        if not await self.check_owner(update):
+            return
+            
         if update.message.chat.type != 'private':
             await update.message.reply_text("请在私聊中使用此命令。")
             return
@@ -228,6 +245,9 @@ class TelegramBot:
 
     async def sync_messages(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """同步群组历史消息"""
+        if not await self.check_owner(update):
+            return
+            
         try:
             if update.message.chat.type != 'private':
                 await update.message.reply_text("请在私聊中使用此命令。")
@@ -311,6 +331,9 @@ class TelegramBot:
 
     async def import_json(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """从JSON文件导入聊天记录"""
+        if not await self.check_owner(update):
+            return
+            
         try:
             if update.message.chat.type != 'private':
                 await update.message.reply_text("请在私聊中使用此命令。")
@@ -429,6 +452,9 @@ class TelegramBot:
 
     async def delete_chat(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理 /delete 命令"""
+        if not await self.check_owner(update):
+            return
+            
         if update.message.chat.type != 'private':
             await update.message.reply_text("请在私聊中使用此命令。")
             return
@@ -443,6 +469,9 @@ class TelegramBot:
 
     async def set_prompt(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理 /setprompt 命令"""
+        if not await self.check_owner(update):
+            return
+            
         if update.message.chat.type != 'private':
             await update.message.reply_text("请在私聊中使用此命令。")
             return
@@ -457,6 +486,9 @@ class TelegramBot:
 
     async def set_suggest_count(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """设置建议回复时使用的消息数量"""
+        if not await self.check_owner(update):
+            return
+            
         if update.message.chat.type != 'private':
             await update.message.reply_text("请在私聊中使用此命令。")
             return
@@ -482,6 +514,9 @@ class TelegramBot:
 
     async def set_model(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理 /setmodel 命令"""
+        if not await self.check_owner(update):
+            return
+            
         if update.message.chat.type != 'private':
             await update.message.reply_text("请在私聊中使用此命令。")
             return

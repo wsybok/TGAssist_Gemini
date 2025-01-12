@@ -45,8 +45,17 @@ class DatabaseHandler:
             cursor.execute('''
                 CREATE TABLE IF NOT EXISTS system_prompts (
                     id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    prompt_type TEXT UNIQUE,  -- 'background', 'actions', 'suggestion'
+                    prompt_type TEXT UNIQUE,
                     prompt_text TEXT,
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+            ''')
+            cursor.execute('''
+                CREATE TABLE IF NOT EXISTS user_preferences (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    user_id INTEGER UNIQUE,
+                    language TEXT DEFAULT 'zh',
                     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
                 )
@@ -474,4 +483,34 @@ class DatabaseHandler:
             else:
                 print("未找到群组背景分析")
                 return None
+
+    def get_user_language(self, user_id: int) -> str:
+        """获取用户的语言偏好"""
+        print(f"\n=== 获取用户语言偏好 ===")
+        print(f"用户ID: {user_id}")
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                SELECT language
+                FROM user_preferences
+                WHERE user_id = ?
+            ''', (user_id,))
+            result = cursor.fetchone()
+            language = result[0] if result else 'zh'
+            print(f"用户语言: {language}")
+            return language
+
+    def set_user_language(self, user_id: int, language: str) -> None:
+        """设置用户的语言偏好"""
+        print(f"\n=== 设置用户语言偏好 ===")
+        print(f"用户ID: {user_id}")
+        print(f"语言: {language}")
+        with sqlite3.connect(self.db_name) as conn:
+            cursor = conn.cursor()
+            cursor.execute('''
+                INSERT OR REPLACE INTO user_preferences (user_id, language, updated_at)
+                VALUES (?, ?, CURRENT_TIMESTAMP)
+            ''', (user_id, language))
+            conn.commit()
+            print("用户语言偏好已更新")
  
