@@ -1,4 +1,11 @@
-python-telegram-bot==20.8
+# Telegram Bot
+python-telegram-bot[webhooks]==20.8
+
+# AI
 google-generativeai==0.3.2
+
+# HTTP
 aiohttp==3.9.1
+
+# Utils
 python-dotenv==1.0.1 
