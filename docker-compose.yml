@@ -5,10 +5,13 @@ services:
     build: .
     restart: always
     volumes:
-      - ./config.py:/app/config.py:ro
+      - ./settings.py:/app/settings.py:ro
       - bot_data:/app/data
+      - ./.env:/app/.env:ro
     expose:
       - "8443"
+    env_file:
+      - .env
     environment:
       - TZ=Asia/Shanghai
       - PYTHONPATH=/app
