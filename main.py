@@ -1,6 +1,6 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
-from config import TELEGRAM_TOKEN, GEMINI_API_KEY, BOT_OWNER_ID, WEBHOOK_LISTEN, WEBHOOK_PORT, WEBHOOK_URL_PATH, WEBHOOK_URL, WEBHOOK_SSL_CERT, WEBHOOK_SSL_PRIV
+from config import TELEGRAM_TOKEN, GEMINI_API_KEY, BOT_OWNER_ID, WEBHOOK_LISTEN, WEBHOOK_PORT, WEBHOOK_URL_PATH, WEBHOOK_URL
 from utils.gemini_handler import GeminiHandler
 from utils.db_handler import DatabaseHandler
 import asyncio
