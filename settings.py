@@ -10,6 +10,7 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 BOT_OWNER_ID = int(os.getenv("BOT_OWNER_ID", "0"))
 
 # Webhook 配置
+USE_WEBHOOK = os.getenv("USE_WEBHOOK", "false").lower() == "true"
 WEBHOOK_HOST = os.getenv("WEBHOOK_HOST", "localhost")
 WEBHOOK_PORT = int(os.getenv("WEBHOOK_PORT", "8443"))
 WEBHOOK_LISTEN = os.getenv("WEBHOOK_LISTEN", "0.0.0.0")
@@ -34,4 +35,17 @@ def validate_config():
         raise ValueError(f"缺少必要的环境变量: {', '.join(missing_vars)}")
         
     if BOT_OWNER_ID == 0:
-        raise ValueError("BOT_OWNER_ID 无效") 
+        raise ValueError("BOT_OWNER_ID 无效")
+        
+    if USE_WEBHOOK:
+        webhook_vars = {
+            "WEBHOOK_HOST": WEBHOOK_HOST,
+            "WEBHOOK_PORT": WEBHOOK_PORT,
+            "WEBHOOK_LISTEN": WEBHOOK_LISTEN
+        }
+        missing_webhook_vars = [var for var, value in webhook_vars.items() if not value]
+        if missing_webhook_vars:
+            raise ValueError(f"使用 Webhook 模式时缺少必要的环境变量: {', '.join(missing_webhook_vars)}")
+
+# 在导入时验证配置
+validate_config() 

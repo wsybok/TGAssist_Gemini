@@ -540,11 +540,12 @@ def main():
     print(f"TELEGRAM_TOKEN: {'已设置' if TELEGRAM_TOKEN else '未设置'}")
     print(f"GEMINI_API_KEY: {'已设置' if GEMINI_API_KEY else '未设置'}")
     print(f"BOT_OWNER_ID: {BOT_OWNER_ID}")
-    print(f"USE_WEBHOOK: {os.getenv('USE_WEBHOOK', 'false')}")
-    if os.getenv('USE_WEBHOOK', 'false').lower() == 'true':
+    print(f"USE_WEBHOOK: {USE_WEBHOOK}")
+    if USE_WEBHOOK:
         print(f"WEBHOOK_HOST: {WEBHOOK_HOST}")
         print(f"WEBHOOK_PORT: {WEBHOOK_PORT}")
         print(f"WEBHOOK_LISTEN: {WEBHOOK_LISTEN}")
+        print(f"WEBHOOK_URL: {WEBHOOK_URL}")
     print("===================\n")
 
     bot = TelegramBot()
