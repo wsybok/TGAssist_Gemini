@@ -8,8 +8,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     gcc \
     && rm -rf /var/lib/apt/lists/*
 
-# 创建数据目录并设置权限
-RUN mkdir -p /app/data && chown -R 1000:1000 /app/data && chmod 777 /app/data
+# 创建必要的目录并设置权限
+RUN mkdir -p /app/data /app/certs && \
+    chown -R 1000:1000 /app/data /app/certs && \
+    chmod 777 /app/data && \
+    chmod 755 /app/certs
 
 # 复制项目文件
 COPY requirements.txt .

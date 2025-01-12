@@ -7,7 +7,8 @@ services:
     volumes:
       - ./config.py:/app/config.py:ro
       - bot_data:/app/data
-      - ./certs:/app/certs:ro
+      - ./certs/cert.pem:/app/certs/cert.pem:ro
+      - ./certs/private.key:/app/certs/private.key:ro
     ports:
       - "127.0.0.1:8443:8443"
     environment:
