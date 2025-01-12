@@ -8,12 +8,12 @@ GEMINI_API_KEY = "your_gemini_api_key_here"
 BOT_OWNER_ID = 123456789  # 替换为你的 Telegram 用户 ID
 
 # Webhook 设置
-WEBHOOK_HOST = "your_domain.com"  # 你的域名
+WEBHOOK_HOST = "tg.ai2fun.fun"  # 域名
 WEBHOOK_PORT = 8443  # 内部端口
-WEBHOOK_LISTEN = '0.0.0.0'  # 监听所有接口，允许容器网络访问
+WEBHOOK_LISTEN = '0.0.0.0'  # 监听所有接口
 
 # Webhook URL 路径
 WEBHOOK_URL_PATH = f"/webhook/{TELEGRAM_TOKEN}"
 
 # 完整的 Webhook URL
-WEBHOOK_URL = f"https://{WEBHOOK_HOST}{WEBHOOK_URL_PATH}"  # 不包含端口号 
+WEBHOOK_URL = f"https://{WEBHOOK_HOST}/webhook/{TELEGRAM_TOKEN}" 

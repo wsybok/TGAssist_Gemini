@@ -680,10 +680,6 @@ def main():
         print(f"Webhook URL: {WEBHOOK_URL}")
         print(f"监听地址: {WEBHOOK_LISTEN}:{WEBHOOK_PORT}{WEBHOOK_URL_PATH}")
         
-        # 生成一个简单的secret token（使用bot token的前8位数字）
-        secret_token = ''.join(c for c in TELEGRAM_TOKEN if c.isdigit())[:8]
-        print(f"Secret Token: {secret_token}")
-        
         application.run_webhook(
             listen=WEBHOOK_LISTEN,
             port=WEBHOOK_PORT,
@@ -691,7 +687,6 @@ def main():
             webhook_url=WEBHOOK_URL,
             allowed_updates=["message", "callback_query"],
             drop_pending_updates=True,
-            secret_token=secret_token,  # 使用生成的secret token
             max_connections=100
         )
     else:
