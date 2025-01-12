@@ -677,13 +677,17 @@ def main():
     if os.getenv('USE_WEBHOOK', 'false').lower() == 'true':
         # Webhook 模式
         print(f"正在以 Webhook 模式启动机器人...")
+        print(f"Webhook URL: {WEBHOOK_URL}")
+        print(f"监听地址: {WEBHOOK_LISTEN}:{WEBHOOK_PORT}{WEBHOOK_URL_PATH}")
         application.run_webhook(
             listen=WEBHOOK_LISTEN,
             port=WEBHOOK_PORT,
             url_path=WEBHOOK_URL_PATH,
             webhook_url=WEBHOOK_URL,
+            allowed_updates=["message", "callback_query"],
             drop_pending_updates=True,
-            allowed_updates=["message", "callback_query"]
+            secret_token=TELEGRAM_TOKEN,  # 添加secret_token以增加安全性
+            webhook_max_connections=100  # 增加最大连接数
         )
     else:
         # Polling 模式（开发环境）
