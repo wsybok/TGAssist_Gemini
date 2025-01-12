@@ -69,6 +69,14 @@ class TelegramBot:
             self.get_message('start', update.effective_user.id)
         )
 
+    async def help(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+        """处理 /help 命令"""
+        if not await self.check_owner(update):
+            return
+        await update.message.reply_text(
+            self.get_message('help', update.effective_user.id)
+        )
+
     async def check_owner(self, update: Update) -> bool:
         """检查是否是机器人所有者"""
         user_id = update.effective_user.id
@@ -573,8 +581,8 @@ def main():
 
     # 添加命令处理器
     application.add_handler(CommandHandler("start", bot.start))
-    application.add_handler(CommandHandler("help", bot.start))  # 添加 help 命令
-    application.add_handler(CommandHandler("lang", bot.lang))  # 确保 lang 命令被正确注册
+    application.add_handler(CommandHandler("help", bot.help))  # 使用独立的 help 处理函数
+    application.add_handler(CommandHandler("lang", bot.lang))
     application.add_handler(CommandHandler("analyze", bot.analyze_history))
     application.add_handler(CommandHandler("actions", bot.check_action_items))
     application.add_handler(CommandHandler("suggest", bot.suggest_reply))
