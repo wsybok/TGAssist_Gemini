@@ -687,7 +687,7 @@ def main():
             allowed_updates=["message", "callback_query"],
             drop_pending_updates=True,
             secret_token=TELEGRAM_TOKEN,  # 添加secret_token以增加安全性
-            webhook_max_connections=100  # 增加最大连接数
+            max_connections=100  # 增加最大连接数
         )
     else:
         # Polling 模式（开发环境）
