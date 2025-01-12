@@ -206,21 +206,27 @@ class DatabaseHandler:
         with sqlite3.connect(self.db_name) as conn:
             cursor = conn.cursor()
             cursor.execute('''
-                WITH group_ids AS (
+                WITH group_messages AS (
                     SELECT DISTINCT ABS(chat_id) as abs_id,
                            FIRST_VALUE(chat_id) OVER (PARTITION BY ABS(chat_id) ORDER BY chat_id DESC) as chat_id
                     FROM messages
+                    WHERE chat_id != 0  -- 排除无效的群组ID
                 )
                 SELECT DISTINCT g.chat_id,
                        COALESCE(
                            (SELECT chat_title 
                             FROM chat_info 
-                            WHERE chat_id = g.chat_id OR chat_id = -g.chat_id
+                            WHERE chat_id = g.chat_id
                             ORDER BY last_updated DESC 
                             LIMIT 1),
-                           'Unknown Group'
+                           'Group ' || g.chat_id
                        ) as chat_title
-                FROM group_ids g
+                FROM group_messages g
+                WHERE EXISTS (
+                    SELECT 1 
+                    FROM messages m 
+                    WHERE m.chat_id = g.chat_id
+                )
                 ORDER BY ABS(g.chat_id)
             ''')
             groups = cursor.fetchall()
@@ -237,17 +243,17 @@ class DatabaseHandler:
                 WITH group_messages AS (
                     SELECT DISTINCT chat_id
                     FROM messages
-                    WHERE ABS(chat_id) = ABS(?)
+                    WHERE ABS(chat_id) = ABS(?) AND chat_id != 0
                     LIMIT 1
                 )
                 SELECT m.chat_id,
                        COALESCE(
                            (SELECT chat_title 
                             FROM chat_info 
-                            WHERE chat_id = m.chat_id OR chat_id = -m.chat_id
+                            WHERE chat_id = m.chat_id
                             ORDER BY last_updated DESC 
                             LIMIT 1),
-                           'Unknown Group'
+                           'Group ' || m.chat_id
                        ) as chat_title
                 FROM group_messages m
             ''', (chat_id,))
