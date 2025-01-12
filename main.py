@@ -535,6 +535,18 @@ class TelegramBot:
         )
 
 def main():
+    # 打印环境变量信息用于调试
+    print("\n=== 环境变量信息 ===")
+    print(f"TELEGRAM_TOKEN: {'已设置' if TELEGRAM_TOKEN else '未设置'}")
+    print(f"GEMINI_API_KEY: {'已设置' if GEMINI_API_KEY else '未设置'}")
+    print(f"BOT_OWNER_ID: {BOT_OWNER_ID}")
+    print(f"USE_WEBHOOK: {os.getenv('USE_WEBHOOK', 'false')}")
+    if os.getenv('USE_WEBHOOK', 'false').lower() == 'true':
+        print(f"WEBHOOK_HOST: {WEBHOOK_HOST}")
+        print(f"WEBHOOK_PORT: {WEBHOOK_PORT}")
+        print(f"WEBHOOK_LISTEN: {WEBHOOK_LISTEN}")
+    print("===================\n")
+
     bot = TelegramBot()
     application = (
         Application.builder()
@@ -555,6 +567,8 @@ def main():
 
     # 添加命令处理器
     application.add_handler(CommandHandler("start", bot.start))
+    application.add_handler(CommandHandler("help", bot.start))  # 添加 help 命令
+    application.add_handler(CommandHandler("lang", bot.lang))  # 确保 lang 命令被正确注册
     application.add_handler(CommandHandler("analyze", bot.analyze_history))
     application.add_handler(CommandHandler("actions", bot.check_action_items))
     application.add_handler(CommandHandler("suggest", bot.suggest_reply))

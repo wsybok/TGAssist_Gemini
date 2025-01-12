@@ -6,6 +6,8 @@ services:
     restart: always
     volumes:
       - ./settings.py:/app/settings.py:ro
+      - ./i18n:/app/i18n:ro
+      - ./utils:/app/utils:ro
       - bot_data:/app/data
       - ./.env:/app/.env:ro
     expose:

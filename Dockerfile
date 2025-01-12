@@ -9,8 +9,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # 创建必要的目录并设置权限
-RUN mkdir -p /app/data /app/certs && \
-    chown -R 1000:1000 /app/data /app/certs && \
+RUN mkdir -p /app/data /app/certs /app/utils /app/i18n && \
+    chown -R 1000:1000 /app && \
     chmod 777 /app/data && \
     chmod 755 /app/certs
 
@@ -18,6 +18,7 @@ RUN mkdir -p /app/data /app/certs && \
 COPY requirements.txt .
 COPY *.py .
 COPY utils/ ./utils/
+COPY i18n/ ./i18n/
 
 # 安装Python依赖
 RUN pip install --no-cache-dir -r requirements.txt
@@ -29,7 +30,7 @@ USER botuser
 
 # 设置环境变量
 ENV PYTHONUNBUFFERED=1
-ENV USE_WEBHOOK=true
+ENV PYTHONPATH=/app
 
 # 启动命令
 CMD ["python", "main.py"] 
