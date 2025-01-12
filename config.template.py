@@ -4,6 +4,9 @@ TELEGRAM_TOKEN = "your_telegram_token_here"
 # Google Gemini API Key (从 Google AI Studio 获取)
 GEMINI_API_KEY = "your_gemini_api_key_here"
 
+# Bot Owner ID (在 Telegram 中与 @userinfobot 对话获取)
+BOT_OWNER_ID = 123456789  # 替换为你的 Telegram 用户 ID
+
 # Webhook 设置
 WEBHOOK_HOST = "your_domain.com"  # 你的域名
 WEBHOOK_PORT = 8443  # 端口号 (推荐使用 443, 80, 88 或 8443)

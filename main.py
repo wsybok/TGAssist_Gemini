@@ -1,6 +1,6 @@
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, MessageHandler, CallbackQueryHandler, filters, ContextTypes
-from config import TELEGRAM_TOKEN, GEMINI_API_KEY, WEBHOOK_LISTEN, WEBHOOK_PORT, WEBHOOK_URL_PATH, WEBHOOK_URL, WEBHOOK_SSL_CERT, WEBHOOK_SSL_PRIV
+from config import TELEGRAM_TOKEN, GEMINI_API_KEY, BOT_OWNER_ID, WEBHOOK_LISTEN, WEBHOOK_PORT, WEBHOOK_URL_PATH, WEBHOOK_URL, WEBHOOK_SSL_CERT, WEBHOOK_SSL_PRIV
 from utils.gemini_handler import GeminiHandler
 from utils.db_handler import DatabaseHandler
 import asyncio
@@ -11,9 +11,37 @@ class TelegramBot:
     def __init__(self):
         self.gemini = GeminiHandler(GEMINI_API_KEY)
         self.db = DatabaseHandler()
+        self.owner_id = BOT_OWNER_ID
+
+    async def check_owner(self, update: Update) -> bool:
+        """检查是否是机器人所有者"""
+        user_id = update.effective_user.id
+        if user_id != self.owner_id:
+            await update.message.reply_text("抱歉，您没有权限使用此机器人。")
+            return False
+        return True
+
+    async def check_group_permission(self, update: Update) -> bool:
+        """检查群组权限"""
+        # 如果是私聊，只检查所有者权限
+        if update.message.chat.type == 'private':
+            return await self.check_owner(update)
+        
+        # 如果是群组消息
+        chat_member = await update.message.chat.get_member(update.message.from_user.id)
+        is_admin = chat_member.status in ['creator', 'administrator']
+        
+        # 只允许群主或管理员使用命令
+        if not is_admin:
+            await update.message.reply_text("抱歉，只有群组管理员才能使用此命令。")
+            return False
+        return True
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """处理 /start 命令"""
+        if not await self.check_owner(update):
+            return
+            
         await update.message.reply_text(
             "你好！我是群组助手。我会自动记录群组消息，你可以使用以下命令：\n"
             "/analyze - 分析群组历史\n"
@@ -299,6 +327,8 @@ class TelegramBot:
             if update.message and update.message.text:
                 # 检查是否在等待新的prompt
                 if "waiting_for_prompt" in context.user_data:
+                    if not await self.check_owner(update):
+                        return
                     prompt_type = context.user_data["waiting_for_prompt"]
                     if update.message.text == "/cancel":
                         await update.message.reply_text("已取消设置提示词。")
@@ -308,13 +338,14 @@ class TelegramBot:
                     del context.user_data["waiting_for_prompt"]
                     return
 
-                # 自动存储所有消息
-                await self.store_message(update)
-                
-                # 如果是新加入群组的欢迎消息
+                # 检查新成员是否是机器人自己
                 if update.message.new_chat_members:
                     for member in update.message.new_chat_members:
                         if member.id == context.bot.id:
+                            # 检查是否是所有者添加的机器人
+                            if update.message.from_user.id != self.owner_id:
+                                await update.message.chat.leave()
+                                return
                             await update.message.reply_text(
                                 "你好！我是群组助手。我会自动记录群组消息，你可以在私聊中使用以下命令：\n"
                                 "/analyze - 分析群组历史\n"
@@ -324,7 +355,12 @@ class TelegramBot:
                                 "/setprompt - 设置AI提示词"
                             )
                             break
-                            
+
+                # 自动存储所有消息（只存储所有者的群组消息）
+                chat_member = await update.message.chat.get_member(self.owner_id)
+                if chat_member.status in ['creator', 'administrator', 'member']:
+                    await self.store_message(update)
+                
         except Exception as e:
             print(f"处理消息时出错：{str(e)}")
 
@@ -620,7 +656,7 @@ def main():
 
     application.add_error_handler(error_handler)
 
-    # 添加命令处理器
+    # 添加命令处理器（只响应所有者的命令）
     application.add_handler(CommandHandler("start", bot.start))
     application.add_handler(CommandHandler("analyze", bot.analyze_history))
     application.add_handler(CommandHandler("actions", bot.check_action_items))
@@ -633,9 +669,9 @@ def main():
     application.add_handler(CommandHandler("setmodel", bot.set_model))
     application.add_handler(CallbackQueryHandler(bot.handle_callback))
     
-    # 添加消息处理器
+    # 添加消息处理器（只处理所有者的消息）
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot.message_handler))
-    application.add_handler(MessageHandler(filters.Document.ALL, bot.import_json))  # 添加文档处理器
+    application.add_handler(MessageHandler(filters.Document.ALL, bot.import_json))
 
     # 根据环境变量决定使用 webhook 还是 polling
     if os.getenv('USE_WEBHOOK', 'false').lower() == 'true':
