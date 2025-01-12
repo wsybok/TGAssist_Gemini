@@ -53,13 +53,185 @@ class TelegramBot:
         query = update.callback_query
         await query.answer()
         
-        if query.data.startswith('lang_'):
-            lang = query.data.split('_')[1]
-            self.db.set_user_language(update.effective_user.id, lang)
-            await query.edit_message_text(
-                self.get_message('lang_changed', update.effective_user.id)
-            )
-        # ... 处理其他回调数据 ...
+        try:
+            # 处理语言切换
+            if query.data.startswith('lang_'):
+                lang = query.data.split('_')[1]
+                self.db.set_user_language(update.effective_user.id, lang)
+                await query.edit_message_text(
+                    self.get_message('lang_changed', update.effective_user.id)
+                )
+                return
+
+            # 处理其他 JSON 格式的回调数据
+            data = json.loads(query.data)
+            action = data.get("action")
+
+            if action == "setmodel":
+                # 处理模型切换
+                model_name = data.get("model")
+                try:
+                    self.gemini.set_model(model_name)
+                    await query.edit_message_text(f"已切换到模型：{model_name}")
+                except ValueError as e:
+                    await query.edit_message_text(str(e))
+                return
+
+            elif action == "setprompt":
+                # 处理提示词设置
+                prompt_type = data.get("type")
+                if "new_prompt" not in data:
+                    current_prompt = self.db.get_system_prompt(prompt_type)
+                    await query.edit_message_text(
+                        f"当前的提示词是：\n\n{current_prompt}\n\n"
+                        f"请直接回复新的提示词，或者输入 /cancel 取消。"
+                    )
+                    context.user_data["waiting_for_prompt"] = prompt_type
+                return
+
+            elif action == "actions_today":
+                # 获取今日所有群组的待办事项
+                groups = self.db.get_all_groups()
+                if not groups:
+                    await query.edit_message_text("未找到任何群组记录。")
+                    return
+                
+                today_report = []
+                for group_id, group_name in groups:
+                    messages = self.db.get_today_messages(group_id)
+                    if messages and len(messages) > 0:
+                        formatted_messages = self._format_messages(messages)
+                        background = self.db.get_background_analysis(group_id)
+                        if not background:
+                            background = "暂无群组背景信息"
+                        system_prompt = (
+                            f"{self.db.get_system_prompt('actions')}\n\n"
+                            f"群组背景信息：\n{background}\n\n"
+                            f"今日消息："
+                        )
+                        try:
+                            actions = await self.gemini.find_action_items(formatted_messages, system_prompt)
+                            if actions and not actions.startswith("没有"):
+                                today_report.append(f"\n{group_name}：\n{actions}")
+                        except Exception as e:
+                            print(f"处理群组 {group_name} 的消息时出错：{str(e)}")
+                            today_report.append(f"\n{group_name}：处理出错，请稍后重试")
+                
+                if today_report:
+                    await query.edit_message_text(
+                        "今日各群组待办事项：\n" + "\n".join(today_report)
+                    )
+                else:
+                    await query.edit_message_text("今日所有群组暂无待办事项。")
+                return
+
+            elif action == "actions_select":
+                # 显示群组选择按钮
+                groups = self.db.get_all_groups()
+                if not groups:
+                    await query.edit_message_text("未找到任何群组记录。")
+                    return
+                reply_markup = self._create_group_selection_keyboard(groups, "actions_group")
+                await query.edit_message_text("请选择要查看待办事项的群组：", reply_markup=reply_markup)
+                return
+
+            elif action == "actions_group":
+                # 处理特定群组的待办事项
+                group_id = data.get("group_id")
+                group_info = self.db.get_group_info(group_id)
+                if not group_info:
+                    await query.edit_message_text("无法获取群组信息。")
+                    return
+                    
+                group_name = group_info[1]
+                messages = self.db.get_chat_history(group_id)[-50:]
+                if not messages:
+                    await query.edit_message_text(f"群组 {group_name} 暂无消息记录。")
+                    return
+                    
+                formatted_messages = self._format_messages(messages)
+                background = self.db.get_background_analysis(group_id)
+                system_prompt = (
+                    f"{self.db.get_system_prompt('actions')}\n\n"
+                    f"群组背景信息：\n{background}\n\n"
+                    f"最近消息："
+                )
+                actions = await self.gemini.find_action_items(formatted_messages, system_prompt)
+                await query.edit_message_text(f"群组：{group_name}\n\n{actions}")
+                return
+
+            elif action == "analyze":
+                # 处理群组分析
+                group_id = data.get("group_id")
+                group_info = self.db.get_group_info(group_id)
+                if not group_info:
+                    await query.edit_message_text("无法获取群组信息。")
+                    return
+                    
+                group_name = group_info[1]
+                messages = self.db.get_chat_history(group_id)
+                if not messages or len(messages) < 5:
+                    await query.edit_message_text(f"群组 {group_name} 的消息记录太少，无法进行分析。")
+                    return
+                    
+                formatted_messages = self._format_messages(messages)
+                system_prompt = self.db.get_system_prompt("background")
+                analysis = await self.gemini.analyze_group_history(formatted_messages, system_prompt)
+                
+                # 存储分析结果
+                self.db.store_analysis(group_id, "background", analysis)
+                await query.edit_message_text(f"群组：{group_name}\n\n{analysis}")
+                return
+
+            elif action == "suggest":
+                # 处理回复建议
+                group_id = data.get("group_id")
+                group_info = self.db.get_group_info(group_id)
+                if not group_info:
+                    await query.edit_message_text("无法获取群组信息。")
+                    return
+                    
+                group_name = group_info[1]
+                message_count = context.user_data.get("suggest_message_count", 5)
+                messages = self.db.get_chat_history(group_id)[-message_count:]
+                if not messages or len(messages) < 2:
+                    await query.edit_message_text(f"群组 {group_name} 的消息记录太少，无法提供建议。")
+                    return
+                    
+                formatted_messages = self._format_messages(messages)
+                background = self.db.get_background_analysis(group_id)
+                system_prompt = (
+                    f"{self.db.get_system_prompt('suggestion')}\n\n"
+                    f"群组背景信息：\n{background}\n\n"
+                    f"最近消息："
+                )
+                suggestion = await self.gemini.suggest_reply(formatted_messages, system_prompt)
+                await query.edit_message_text(f"群组：{group_name}\n\n{suggestion}")
+                return
+
+            elif action == "delete":
+                # 处理群组记录删除
+                group_id = data.get("group_id")
+                group_info = self.db.get_group_info(group_id)
+                if not group_info:
+                    await query.edit_message_text("无法获取群组信息。")
+                    return
+                    
+                group_name = group_info[1]
+                if self.db.delete_chat_history(group_id):
+                    await query.edit_message_text(f"已成功删除群组 {group_name} 的所有记录。")
+                else:
+                    await query.edit_message_text(f"删除群组 {group_name} 的记录时出错。")
+                return
+
+            # 如果没有匹配的操作
+            await query.edit_message_text("未知的操作请求。")
+
+        except Exception as e:
+            print(f"处理回调时出错：{str(e)}")
+            print(f"错误类型：{type(e)}")
+            print(f"错误详情：", e.__traceback__.tb_frame.f_locals)
+            await query.edit_message_text("处理请求时出错，请稍后重试。")
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
         """处理 /start 命令"""
