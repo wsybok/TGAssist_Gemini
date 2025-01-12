@@ -656,7 +656,7 @@ def main():
 
     application.add_error_handler(error_handler)
 
-    # 添加命令处理器（只响应所有者的命令）
+    # 添加命令处理器
     application.add_handler(CommandHandler("start", bot.start))
     application.add_handler(CommandHandler("analyze", bot.analyze_history))
     application.add_handler(CommandHandler("actions", bot.check_action_items))
@@ -669,7 +669,7 @@ def main():
     application.add_handler(CommandHandler("setmodel", bot.set_model))
     application.add_handler(CallbackQueryHandler(bot.handle_callback))
     
-    # 添加消息处理器（只处理所有者的消息）
+    # 添加消息处理器
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, bot.message_handler))
     application.add_handler(MessageHandler(filters.Document.ALL, bot.import_json))
 
@@ -682,8 +682,6 @@ def main():
             port=WEBHOOK_PORT,
             url_path=WEBHOOK_URL_PATH,
             webhook_url=WEBHOOK_URL,
-            cert=WEBHOOK_SSL_CERT,
-            key=WEBHOOK_SSL_PRIV,
             drop_pending_updates=True,
             allowed_updates=["message", "callback_query"]
         )

@@ -9,12 +9,8 @@ BOT_OWNER_ID = 123456789  # 替换为你的 Telegram 用户 ID
 
 # Webhook 设置
 WEBHOOK_HOST = "your_domain.com"  # 你的域名
-WEBHOOK_PORT = 8443  # 端口号 (推荐使用 443, 80, 88 或 8443)
+WEBHOOK_PORT = 8443  # 端口号
 WEBHOOK_LISTEN = '0.0.0.0'  # 监听所有接口
-
-# SSL 证书设置
-WEBHOOK_SSL_CERT = "path/to/cert.pem"  # SSL 证书路径
-WEBHOOK_SSL_PRIV = "path/to/private.key"  # SSL 私钥路径
 
 # Webhook URL 路径
 WEBHOOK_URL_PATH = f"/webhook/{TELEGRAM_TOKEN}"
